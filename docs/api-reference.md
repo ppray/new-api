@@ -57,7 +57,7 @@ OpenAI-compatible chat completion endpoint.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `model` | string | Yes | Model ID (e.g., `glm-5.1`, `deepseek-v3`, `qwen-max`) |
+| `model` | string | Yes | Model ID (e.g., `glm-5.1`, `deepseek-v3.2`, `glm-4.7`) |
 | `messages` | array | Yes | Array of message objects with `role` and `content` |
 | `temperature` | float | No | Sampling temperature (0-2). Default: 1 |
 | `max_tokens` | integer | No | Maximum tokens to generate |
@@ -172,7 +172,7 @@ POST /v1/embeddings
 
 ```json
 {
-  "model": "embedding-3",
+  "model": "<your-embedding-model>",
   "input": "Hello, world!"
 }
 ```
@@ -189,7 +189,7 @@ POST /v1/embeddings
       "embedding": [0.0023, -0.0094, ...]
     }
   ],
-  "model": "embedding-3",
+  "model": "<your-embedding-model>",
   "usage": {
     "prompt_tokens": 2,
     "total_tokens": 2
@@ -209,7 +209,7 @@ POST /v1/images/generations
 
 ```json
 {
-  "model": "dall-e-3",
+  "model": "<your-image-model>",
   "prompt": "A cute cat wearing a hat",
   "n": 1,
   "size": "1024x1024"
@@ -261,7 +261,7 @@ Any OpenAI-compatible SDK works out of the box:
 | Python `openai` | `base_url="https://openroutera.com/v1"` |
 | Node.js `openai` | `baseURL: 'https://openroutera.com/v1'` |
 | Python `anthropic` | `base_url="https://openroutera.com"` |
-| LangChain | Set `openai_api_base` |
-| LlamaIndex | Set `api_base` |
+| LangChain | `ChatOpenAI(openai_api_base="https://openroutera.com/v1")` |
+| LlamaIndex | `Settings.api_base = "https://openroutera.com/v1"` |
 
 No code changes needed — just swap the base URL and API key.

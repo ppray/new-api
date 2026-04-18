@@ -95,10 +95,11 @@ See [Supported Models](/#supported-models) for the full list. Popular choices:
 | Model | Best For | Price |
 |-------|----------|-------|
 | `glm-5.1` | General purpose, Chinese tasks | $0.02/req |
-| `deepseek-v3` | Reasoning, code | $0.02/req |
-| `qwen-max` | Long context, Chinese | $0.02/req |
-| `claude-4-opus` | Complex reasoning | varies |
-| `gpt-4o` | General purpose | varies |
+| `glm-4.7` | General purpose, balanced cost | $0.01/req |
+| `deepseek-v3.2` | Reasoning, code | $0.01/req |
+| `doubao-seed-2.0-pro` | General purpose, cost-effective | $0.01/req |
+| `kimi-k2.5` | Long context | $0.01/req |
+| `MiniMax-M2.5` | General purpose | $0.01/req |
 
 ## Step 5: Add Credits
 

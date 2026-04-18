@@ -40,30 +40,23 @@ That's it. No SDK changes needed — just swap the base URL.
 
 ## Supported Models
 
-| Provider | Models |
-|----------|--------|
-| **GLM (Zhipu)** | GLM-5.1, GLM-4, GLM-4V, GLM-3 Turbo |
-| **DeepSeek** | DeepSeek V3, DeepSeek R1, DeepSeek Coder |
-| **Qwen (Alibaba)** | Qwen-Max, Qwen 2.5, Qwen-VL |
-| **MiniMax** | MiniMax 01, MiniMax Vision, MiniMax Speech |
-| **Moonshot** | Moonshot v1 (Kimi) |
-| **Wenxin (Baidu)** | ERNIE 4.0, ERNIE 3.5 |
-| **Hunyuan (Tencent)** | Hunyuan Turbo, Hunyuan Vision |
-| **Spark (iFlytek)** | Spark 4.0 Ultra |
-| **Volcengine (ByteDance)** | Doubao series |
-| **Claude** | Claude 4 Opus, Claude 4 Sonnet |
-| **OpenAI** | GPT-4o, GPT-4o-mini |
-| **Gemini** | Gemini 2.5 Pro, Gemini 2.5 Flash |
-| **Grok** | Grok 3 |
-| **+ 30 more** | Llama, Mistral, Cohere, ... |
+| Provider | Models | Price |
+|----------|--------|-------|
+| **Zhipu** | glm-5.1, glm-5-turbo, glm-4.7 | $0.010 - $0.02/req |
+| **DeepSeek** | deepseek-v3.2 | $0.01/req |
+| **Doubao (ByteDance)** | doubao-seed-2.0-pro, doubao-seed-2.0-code, doubao-seed-2.0-lite, doubao-seed-code | $0.01/req |
+| **Moonshot (Kimi)** | kimi-k2.5 | $0.01/req |
+| **MiniMax** | MiniMax-M2.5 | $0.01/req |
+
+> Full list available at [openroutera.com/pricing](https://openroutera.com/pricing).
 
 ## Pricing
 
 **Per-request flat rate.** No token counting, no surprises.
 
 - Same price regardless of context length (1K or 200K+)
-- Premium models starting at **$0.02/request**
-- Up to **12x cheaper** than per-token competitors at large context sizes
+- Models starting at **$0.01/request**
+- GLM 5.1 at **$0.02/request** — up to **12x cheaper** than per-token competitors at 200K+ context
 
 Visit [openroutera.com/pricing](https://openroutera.com/pricing) for full pricing details.
 
@@ -73,7 +66,6 @@ Visit [openroutera.com/pricing](https://openroutera.com/pricing) for full pricin
 - **Best value for large context** — 12x cheaper at 200K+ tokens
 - **Full Chinese model coverage** — every major Chinese LLM provider
 - **Zero migration cost** — OpenAI & Anthropic compatible, just swap the URL
-- **Global low-latency** — Singapore, US, Europe nodes
 - **No vendor lock-in** — standard API format, switch anytime
 
 ## Documentation

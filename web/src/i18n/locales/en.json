@@ -3673,6 +3673,17 @@
     "默认折叠侧边栏": "Default collapse sidebar",
     "默认测试模型": "Default Test Model",
     "默认用户消息": "Default User Message",
-    "默认补全倍率": "Default completion ratio"
+    "默认补全倍率": "Default completion ratio",
+    "快速配置": "Quick Setup",
+    "一键配置 Claude Code": "Configure Claude Code with One Command",
+    "在终端运行此命令，自动完成 Claude Code 配置": "Run this command in terminal to automatically configure Claude Code",
+    "手动配置": "Manual Setup",
+    "编辑 ~/.claude/settings.json，添加以下内容：": "Edit ~/.claude/settings.json and add the following:",
+    "环境变量说明": "Environment Variables Reference",
+    "API 服务地址": "API Base URL",
+    "你的 API 密钥": "Your API Key",
+    "默认 Sonnet 模型": "Default Sonnet Model",
+    "默认 Opus 模型": "Default Opus Model",
+    "请求超时时间 (ms)": "Request Timeout (ms)"
   }
 }

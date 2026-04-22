@@ -188,6 +188,7 @@ docker run --name new-api -d --restart always \
 | 🔄 数据兼容 | 完全兼容原版 One API 数据库 |
 | 📈 数据看板 | 可视化控制台与统计分析 |
 | 🔒 权限管理 | 令牌分组、模型限制、用户管理 |
+| 🚀 Claude Code 一键配置 | Dashboard集成快速配置面板，一键完成Claude Code环境配置 |
 
 ### 💰 支付与计费
 

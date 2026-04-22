@@ -25,6 +25,7 @@ import SettingsPaymentGatewayStripe from '../../pages/Setting/Payment/SettingsPa
 import SettingsPaymentGatewayCreem from '../../pages/Setting/Payment/SettingsPaymentGatewayCreem';
 import SettingsPaymentGatewayWaffo from '../../pages/Setting/Payment/SettingsPaymentGatewayWaffo';
 import SettingsPaymentGatewayWaffoPancake from '../../pages/Setting/Payment/SettingsPaymentGatewayWaffoPancake';
+import SettingsPaymentGatewayNowPayments from '../../pages/Setting/Payment/SettingsPaymentGatewayNowPayments';
 import { API, showError, toBoolean } from '../../helpers';
 import { useTranslation } from 'react-i18next';
 
@@ -60,6 +61,13 @@ const PaymentSetting = () => {
     WaffoPancakeCurrency: 'USD',
     WaffoPancakeUnitPrice: 1.0,
     WaffoPancakeMinTopUp: 1,
+
+    NowPaymentsEnabled: false,
+    NowPaymentsApiKey: '',
+    NowPaymentsWebhookSecret: '',
+    NowPaymentsCurrency: 'usdtsol',
+    NowPaymentsUnitPrice: 1.0,
+    NowPaymentsMinTopUp: 1,
   });
 
   let [loading, setLoading] = useState(false);
@@ -110,6 +118,8 @@ const PaymentSetting = () => {
           case 'StripeMinTopUp':
           case 'WaffoPancakeUnitPrice':
           case 'WaffoPancakeMinTopUp':
+          case 'NowPaymentsUnitPrice':
+          case 'NowPaymentsMinTopUp':
             newInputs[item.key] = parseFloat(item.value);
             break;
           case 'WaffoPancakeMerchantID':
@@ -193,6 +203,13 @@ const PaymentSetting = () => {
             </Tabs.TabPane>
             <Tabs.TabPane tab={t('Waffo 设置')} itemKey='waffo'>
               <SettingsPaymentGatewayWaffo
+                options={inputs}
+                refresh={onRefresh}
+                hideSectionTitle
+              />
+            </Tabs.TabPane>
+            <Tabs.TabPane tab={t('NowPayments 设置')} itemKey='nowpayments'>
+              <SettingsPaymentGatewayNowPayments
                 options={inputs}
                 refresh={onRefresh}
                 hideSectionTitle

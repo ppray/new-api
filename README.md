@@ -188,6 +188,7 @@ docker run --name new-api -d --restart always \
 | 🔄 Data Compatibility | Fully compatible with the original One API database |
 | 📈 Data Dashboard | Visual console and statistical analysis |
 | 🔒 Permission Management | Token grouping, model restrictions, user management |
+| 🚀 One-click Claude Code Configuration | Integrated quick setup panel in Dashboard, complete Claude Code environment configuration with one command |
 
 ### 💰 Payment and Billing
 

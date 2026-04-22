@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useState, useContext, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useSearchParams } from 'react-router-dom';
 import {
   API,
@@ -144,6 +145,9 @@ const TopUp = () => {
     if (typeof payment === 'string' && payment.startsWith('waffo:')) {
       return getWaffoAmount(value);
     }
+    if (payment === 'nowpayments') {
+      return getNowPaymentsAmount(value);
+    }
     return getAmount(value);
   };
 
@@ -207,6 +211,8 @@ const TopUp = () => {
         showError(t('管理员未开启 Waffo 充值！'));
         return;
       }
+    } else if (payment === 'nowpayments') {
+      // NowPayments handled below
     } else {
       if (!enableOnlineTopUp) {
         showError(t('管理员未开启在线充值！'));
@@ -253,6 +259,11 @@ const TopUp = () => {
         setOpen(false);
         setConfirmLoading(false);
       }
+      return;
+    }
+
+    if (payWay === 'nowpayments') {
+      await nowPaymentsTopUp();
       return;
     }
 
@@ -639,6 +650,8 @@ const TopUp = () => {
           const enableWaffoTopUp = data.enable_waffo_topup || false;
           const enableWaffoPancakeTopUp =
             data.enable_waffo_pancake_topup || false;
+          const enableNowPaymentsTopUp =
+            data.enable_nowpayments_topup || false;
           const minTopUpValue = enableOnlineTopUp
             ? data.min_topup
             : enableStripeTopUp
@@ -647,7 +660,9 @@ const TopUp = () => {
                 ? data.waffo_min_topup
                 : enableWaffoPancakeTopUp
                   ? data.waffo_pancake_min_topup
-                : 1;
+                  : enableNowPaymentsTopUp
+                    ? data.nowpayments_min_topup || 1
+                  : 1;
           setEnableOnlineTopUp(enableOnlineTopUp);
           setEnableStripeTopUp(enableStripeTopUp);
           setEnableCreemTopUp(enableCreemTopUp);
@@ -772,7 +787,7 @@ const TopUp = () => {
   }, [statusState?.status]);
 
   const renderAmount = () => {
-    return amount + ' ' + t('元');
+    return '$' + amount;
   };
 
   const getAmount = async (value) => {
@@ -827,6 +842,90 @@ const TopUp = () => {
       setAmountLoading(false);
     }
   };
+
+  const getNowPaymentsAmount = async (value) => {
+    if (value === undefined) {
+      value = topUpCount;
+    }
+    setAmountLoading(true);
+    try {
+      const res = await API.post('/api/user/nowpayments/amount', {
+        amount: parseFloat(value),
+      });
+      if (res !== undefined) {
+        const { message, data } = res.data;
+        if (message === 'success') {
+          setAmount(parseFloat(data));
+        } else {
+          setAmount(0);
+          Toast.error({ content: '错误：' + data, id: 'getAmount' });
+        }
+      }
+    } catch (err) {
+      // amount fetch failed silently
+    } finally {
+      setAmountLoading(false);
+    }
+  };
+
+  const [nowPaymentsModalVisible, setNowPaymentsModalVisible] = useState(false);
+  const [nowPaymentsInfo, setNowPaymentsInfo] = useState(null);
+  const nowPaymentsTradeNoRef = useRef(null);
+
+  const nowPaymentsTopUp = async () => {
+    const nowPaymentsMinTopUp = Number(
+      confirmPayMethods.find((m) => m.type === 'nowpayments')?.min_topup || 1,
+    );
+    if (topUpCount < nowPaymentsMinTopUp) {
+      showError(t('充值数量不能小于') + nowPaymentsMinTopUp);
+      return;
+    }
+
+    setConfirmLoading(true);
+    try {
+      const res = await API.post('/api/user/nowpayments/pay', {
+        amount: parseInt(topUpCount),
+        payment_method: 'nowpayments',
+      });
+      if (res !== undefined) {
+        const { message, data } = res.data;
+        if (message === 'success') {
+          setNowPaymentsInfo(data);
+          nowPaymentsTradeNoRef.current = data.trade_no;
+          setNowPaymentsModalVisible(true);
+        } else {
+          const errorMsg =
+            typeof data === 'string' ? data : message || t('支付失败');
+          showError(errorMsg);
+        }
+      } else {
+        showError(res);
+      }
+    } catch (err) {
+      showError(t('支付请求失败'));
+    } finally {
+      setOpen(false);
+      setConfirmLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!nowPaymentsModalVisible || !nowPaymentsTradeNoRef.current) return;
+    const tradeNo = nowPaymentsTradeNoRef.current;
+    const timer = setInterval(async () => {
+      try {
+        const res = await API.get(`/api/user/topup/status?trade_no=${tradeNo}`);
+        if (res?.data?.data?.status === 'success') {
+          clearInterval(timer);
+          setNowPaymentsModalVisible(false);
+          nowPaymentsTradeNoRef.current = null;
+          showSuccess(t('充值成功'));
+          userDispatch({ type: 'updateQuota', payload: {} });
+        }
+      } catch (e) {}
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [nowPaymentsModalVisible]);
 
   const handleCancel = () => {
     setOpen(false);
@@ -904,6 +1003,97 @@ const TopUp = () => {
         amountNumber={amount}
         discountRate={topupInfo?.discount?.[topUpCount] || 1.0}
       />
+
+      {/* NowPayments 加密货币支付模态框 */}
+      <Modal
+        title={t('请完成支付')}
+        visible={nowPaymentsModalVisible}
+        onCancel={() => setNowPaymentsModalVisible(false)}
+        centered
+        width={420}
+        footer={null}
+      >
+        {nowPaymentsInfo && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{
+                background: '#fff',
+                padding: 16,
+                borderRadius: 12,
+                border: '1px solid var(--semi-color-border)',
+                display: 'inline-block',
+              }}
+            >
+              <QRCodeSVG
+                value={nowPaymentsInfo.pay_link || nowPaymentsInfo.pay_address}
+                size={220}
+                level='M'
+              />
+            </div>
+            <p style={{ margin: '16px 0 4px', fontSize: 14, color: 'var(--semi-color-text-1)' }}>
+              {t('请使用钱包扫码或点击地址转账')}
+            </p>
+            <div
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                background: 'var(--semi-color-fill-0)',
+                borderRadius: 8,
+                padding: '12px 16px',
+                fontSize: 13,
+                lineHeight: '24px',
+              }}
+            >
+              <div>
+                <span style={{ color: 'var(--semi-color-text-2)' }}>{t('网络')}</span>
+                <span style={{ marginLeft: 8, fontWeight: 600 }}>
+                  {(() => {
+                    const c = nowPaymentsInfo.pay_currency || '';
+                    if (c.includes('sol')) return 'Solana';
+                    if (c.includes('trc')) return 'TRON';
+                    if (c.includes('erc')) return 'Ethereum';
+                    if (c.includes('bsc') || c.includes('bnb')) return 'BNB Chain';
+                    if (c === 'btc') return 'Bitcoin';
+                    if (c === 'eth') return 'Ethereum';
+                    if (c === 'trx') return 'TRON';
+                    return c.toUpperCase();
+                  })()}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <span style={{ color: 'var(--semi-color-text-2)', flexShrink: 0 }}>{t('地址')}</span>
+                <span
+                  style={{
+                    marginLeft: 8,
+                    cursor: 'pointer',
+                    color: 'var(--semi-color-primary)',
+                    wordBreak: 'break-all',
+                  }}
+                  onClick={() => {
+                    copy(nowPaymentsInfo.pay_address);
+                    showSuccess(t('地址已复制'));
+                  }}
+                >
+                  {nowPaymentsInfo.pay_address}
+                </span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--semi-color-text-2)' }}>{t('金额')}</span>
+                <span style={{ marginLeft: 8, fontWeight: 600 }}>
+                  {nowPaymentsInfo.pay_amount} {nowPaymentsInfo.pay_currency?.toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <button
+              className='semi-button semi-button-primary'
+              style={{ marginTop: 20, width: '100%' }}
+              onClick={() => setNowPaymentsModalVisible(false)}
+            >
+              {t('完成')}
+            </button>
+          </div>
+        )}
+      </Modal>
 
       {/* 充值账单模态框 */}
       <TopupHistoryModal

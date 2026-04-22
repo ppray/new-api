@@ -90,6 +90,26 @@ func GetTopUpInfo(c *gin.Context) {
 		}
 	}
 
+	enableNowPayments := isNowPaymentsTopUpEnabled()
+	if enableNowPayments {
+		hasNowPayments := false
+		for _, method := range payMethods {
+			if method["type"] == model.PaymentMethodNowPayments {
+				hasNowPayments = true
+				break
+			}
+		}
+
+		if !hasNowPayments {
+			payMethods = append(payMethods, map[string]string{
+				"name":      "USDT",
+				"type":      model.PaymentMethodNowPayments,
+				"color":     "rgba(var(--semi-green-5), 1)",
+				"min_topup": strconv.Itoa(setting.NowPaymentsMinTopUp),
+			})
+		}
+	}
+
 	data := gin.H{
 		"enable_online_topup":        isEpayTopUpEnabled(),
 		"enable_stripe_topup":        isStripeTopUpEnabled(),
@@ -108,8 +128,10 @@ func GetTopUpInfo(c *gin.Context) {
 		"stripe_min_topup":        setting.StripeMinTopUp,
 		"waffo_min_topup":         setting.WaffoMinTopUp,
 		"waffo_pancake_min_topup": setting.WaffoPancakeMinTopUp,
-		"amount_options":          operation_setting.GetPaymentSetting().AmountOptions,
-		"discount":                operation_setting.GetPaymentSetting().AmountDiscount,
+		"enable_nowpayments_topup": enableNowPayments,
+		"nowpayments_min_topup":    setting.NowPaymentsMinTopUp,
+		"amount_options":           operation_setting.GetPaymentSetting().AmountOptions,
+		"discount":                 operation_setting.GetPaymentSetting().AmountDiscount,
 	}
 	common.ApiSuccess(c, data)
 }
@@ -128,6 +150,7 @@ var nonEpayPaymentMethodsForCallback = []string{
 	model.PaymentMethodCreem,
 	model.PaymentMethodWaffo,
 	model.PaymentMethodWaffoPancake,
+	model.PaymentMethodNowPayments,
 }
 
 func isNonEpayPaymentMethodForEpayCallback(paymentMethod string) bool {
@@ -436,6 +459,26 @@ func RequestAmount(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": strconv.FormatFloat(payMoney, 'f', 2, 64)})
+}
+
+func CheckTopUpStatus(c *gin.Context) {
+	tradeNo := c.Query("trade_no")
+	if tradeNo == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		return
+	}
+	userId := c.GetInt("id")
+	topUp := model.GetTopUpByTradeNo(tradeNo)
+	if topUp == nil || topUp.UserId != userId {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单不存在"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "success",
+		"data": gin.H{
+			"status": topUp.Status,
+		},
+	})
 }
 
 func GetUserTopUps(c *gin.Context) {

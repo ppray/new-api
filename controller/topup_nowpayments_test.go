@@ -20,6 +20,12 @@ func signNowPayments(body map[string]interface{}, secret string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+func signNowPaymentsBytes(body []byte, secret string) string {
+	h := hmac.New(sha512.New, []byte(secret))
+	h.Write(body)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 func TestVerifyNowPaymentsSignature_Valid(t *testing.T) {
 	body := map[string]interface{}{
 		"payment_status": "finished",
@@ -89,6 +95,21 @@ func TestVerifyNowPaymentsSignature_SortedKeys(t *testing.T) {
 
 func TestVerifyNowPaymentsSignature_InvalidJSON(t *testing.T) {
 	require.False(t, verifyNowPaymentsSignature([]byte("not json"), "sig", "secret"))
+}
+
+func TestVerifyNowPaymentsSignature_LargeInteger(t *testing.T) {
+	secret := "precision-test"
+	// payment_id exceeds float64 precision (2^53 ≈ 9e15)
+	body := []byte(`{"order_id":"test-1","payment_id":12345678901234567890,"payment_status":"finished"}`)
+	sig := signNowPaymentsBytes(body, secret)
+	require.True(t, verifyNowPaymentsSignature(body, sig, secret))
+}
+
+func TestVerifyNowPaymentsSignature_FloatPrecision(t *testing.T) {
+	secret := "precision-test"
+	body := []byte(`{"order_id":"test-2","pay_amount":1.23456789012345,"payment_status":"finished"}`)
+	sig := signNowPaymentsBytes(body, secret)
+	require.True(t, verifyNowPaymentsSignature(body, sig, secret))
 }
 
 // ---------- getNowPaymentsPayMoney ----------

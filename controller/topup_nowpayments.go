@@ -5,9 +5,11 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -53,7 +55,6 @@ type NowPaymentsCreateResponse struct {
 }
 
 type NowPaymentsWebhookData struct {
-	PaymentId        int64   `json:"payment_id"`
 	PaymentStatus    string  `json:"payment_status"`
 	PayAddress       string  `json:"pay_address"`
 	PriceAmount      float64 `json:"price_amount"`
@@ -62,9 +63,6 @@ type NowPaymentsWebhookData struct {
 	PayCurrency      string  `json:"pay_currency"`
 	OrderId          string  `json:"order_id"`
 	OrderDescription string  `json:"order_description"`
-	PurchaseId       string  `json:"purchase_id"`
-	CreatedAt        string  `json:"created_at"`
-	UpdatedAt        string  `json:"updated_at"`
 }
 
 type NowPaymentsAdaptor struct{}
@@ -153,6 +151,7 @@ func (*NowPaymentsAdaptor) RequestPay(c *gin.Context, req *NowPaymentsPayRequest
 		Money:         payMoney,
 		TradeNo:       referenceId,
 		PaymentMethod: model.PaymentMethodNowPayments,
+		PayAddress:    payResp.PayAddress,
 		CreateTime:    time.Now().Unix(),
 		Status:        common.TopUpStatusPending,
 	}
@@ -269,7 +268,7 @@ func NowPaymentsWebhook(c *gin.Context) {
 			return
 		}
 
-		logger.LogInfo(ctx, fmt.Sprintf("NowPayments充值成功 user_id=%d trade_no=%s amount=%d", topUp.UserId, tradeNo, topUp.Amount))
+		logger.LogInfo(ctx, fmt.Sprintf("NowPayments充值成功 user_id=%d trade_no=%s amount=%d pay_address=%s", topUp.UserId, tradeNo, topUp.Amount, topUp.PayAddress))
 
 	case "failed", "expired", "refunded":
 		if topUp.Status == common.TopUpStatusPending {
@@ -327,17 +326,33 @@ func verifyNowPaymentsSignature(body []byte, signature string, secret string) bo
 	if signature == "" || secret == "" {
 		return false
 	}
-	// NowPayments requires sorted JSON fields before signing
-	var rawMap map[string]interface{}
+	// NowPayments requires sorted JSON fields before signing.
+	// Use json.RawMessage to preserve original bytes and avoid float precision loss.
+	var rawMap map[string]json.RawMessage
 	if err := common.Unmarshal(body, &rawMap); err != nil {
 		return false
 	}
-	sortedBytes, err := common.Marshal(rawMap)
-	if err != nil {
-		return false
+
+	keys := make([]string, 0, len(rawMap))
+	for k := range rawMap {
+		keys = append(keys, k)
 	}
+	sort.Strings(keys)
+
+	var buf bytes.Buffer
+	buf.WriteByte('{')
+	for i, k := range keys {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(strconv.Quote(k))
+		buf.WriteByte(':')
+		buf.Write(rawMap[k])
+	}
+	buf.WriteByte('}')
+
 	h := hmac.New(sha512.New, []byte(secret))
-	h.Write(sortedBytes)
+	h.Write(buf.Bytes())
 	expectedSig := hex.EncodeToString(h.Sum(nil))
 	return hmac.Equal([]byte(signature), []byte(expectedSig))
 }
